@@ -1,13 +1,13 @@
-    *   *    
-    *   *    
-    *   *    
-             
-***   *   ***
-     ***     
-    *****    
-     ***     
-***   *   ***
-             
-    *   *    
-    *   *    
-    *   *    
+XXXX.XXX.XXXX
+XXXX.XXX.XXXX
+XXXX.XXX.XXXX
+XXXXXXXXXXXXX
+...XXX.XXX...
+XXXXX...XXXXX
+XXXX.....XXXX
+XXXXX...XXXXX
+...XXX.XXX...
+XXXXXXXXXXXXX
+XXXX.XXX.XXXX
+XXXX.XXX.XXXX
+XXXX.XXX.XXXX

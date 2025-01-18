@@ -3,6 +3,8 @@ Utility methods to split a `Crossword` into component words.
 */
 use crate::{Crossword, Direction};
 
+const BLACK_SQUARE: char = '.';
+
 /// Parses a Crossword into a `Vec<WordBoundary>`. Returns all words present in the puzzle.
 ///
 /// Note that every square in a Crossword is present in two word boundaries; one `Down` and
@@ -21,7 +23,7 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     for row in 0..crossword.height {
         for col in 0..crossword.width {
             let current_char = byte_array[row * crossword.width + col] as char;
-            if current_char != '*' {
+            if current_char != BLACK_SQUARE {
                 // found a char; is it our first?
                 if start_row == None {
                     start_row = Some(row);
@@ -67,7 +69,7 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     for col in 0..crossword.width {
         for row in 0..crossword.height {
             let current_char = byte_array[row * crossword.width + col] as char;
-            if current_char != '*' {
+            if current_char != BLACK_SQUARE {
                 // found a char; is it our first?
                 if start_row == None {
                     start_row = Some(row);
@@ -149,14 +151,14 @@ mod tests {
 
     #[test]
     fn parse_word_boundaries_works() {
-        let c = Crossword::square(String::from(
+        let c = Crossword::parse(String::from(
             "
 abc
 def
 ghi
 ",
         ))
-        .unwrap();
+            .unwrap();
         let result = parse_word_boundaries(&c);
 
         assert_eq!(result.len(), 6);
@@ -199,27 +201,70 @@ ghi
     }
 
     #[test]
-    fn parse_word_boundaries_big_grid() {
-        let c = Crossword::square(String::from(
+    fn parse_word_boundaries_small_grid_works() {
+        let c = Crossword::parse(String::from(
             "
-    *    *     
-    *    *     
-         *     
-   *   *   *   
-**    *        
-      *     ***
-     *    *    
-   *       *   
-    *    *     
-***     *      
-        *    **
-   *   *   *   
-     *         
-     *    *    
-     *    *    
+X..
+X..
+XXX
 ",
         ))
-        .unwrap();
+            .unwrap();
+
+        let result = parse_word_boundaries(&c);
+
+        assert_eq!(result.len(), 6);
+        assert_eq!(
+            result[0],
+            WordBoundary {
+                start_col: 0,
+                start_row: 0,
+                length: 1,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[2],
+            WordBoundary {
+                start_col: 0,
+                start_row: 2,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[3],
+            WordBoundary {
+                start_col: 0,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Down
+            }
+        );
+    }
+
+    #[test]
+    fn parse_word_boundaries_big_grid_works() {
+        let c = Crossword::parse(String::from(
+            "
+XXXX.XXXX.XXXXX
+XXXX.XXXX.XXXXX
+XXXXXXXXX.XXXXX
+XXX.XXX.XXX.XXX
+..XXXX.XXXXXXXX
+XXXXXX.XXXXX...
+XXXXX.XXXX.XXXX
+XXX.XXXXXXX.XXX
+XXXX.XXXX.XXXXX
+...XXXXX.XXXXXX
+XXXXXXXX.XXXX..
+XXX.XXX.XXX.XXX
+XXXXX.XXXXXXXXX
+XXXXX.XXXX.XXXX
+XXXXX.XXXX.XXXX
+",
+        ))
+            .unwrap();
 
         let result = parse_word_boundaries(&c);
 
