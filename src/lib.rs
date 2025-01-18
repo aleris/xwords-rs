@@ -17,12 +17,13 @@ use crate::crossword::Crossword;
 use crate::crossword::Direction;
 use std::fs::File;
 
+pub mod across;
 pub mod crossword;
 pub mod fill;
 pub mod parse;
 pub mod trie;
 
-pub fn fill_crossword_with_default_wordlist(crossword: &Crossword) -> Result<Crossword, String> {
+pub fn fill_crossword_with_default_wordlist(crossword: &Crossword, random: bool) -> Result<Crossword, String> {
     let trie = Trie::load_default().expect("Failed to load trie");
-    Filler::new(&trie).fill(crossword)
+    Filler::new(&trie, random).fill(crossword)
 }

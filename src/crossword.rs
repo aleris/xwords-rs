@@ -2,19 +2,18 @@
 Core types to represent a crossword puzzle.
 */
 
-use crate::parse::WordBoundary;
-use std::{fmt, hash::Hash};
+use crate::parse::{parse_word_boundaries, WordBoundary};
+use std::{fmt, fs, hash::Hash};
+use std::path::Path;
 
-/// The underlying representation of a crossword puzzle. All of
-/// the contents are stored in a string and the dimensions of the grid
-/// are stored explicitly.
+/// The underlying representation of a crossword puzzle.
+/// All the contents are stored in a string, and the dimensions of the grid are stored explicitly.
 ///
-/// In the contents, `*` represents a shaded square, and a ` ` represents
-/// a blank square.
-///
-/// To parse a square grid, see [`xwords::crossword::Crossword::square`]. To parse a
-/// rectangular grid, see [`xwords::crossword::Crossword::rectangle`]
-
+/// The contents use ACROSS PUZZLE V2 format to represent the grid.
+/// See [the specs PDF](http://www.litsoft.com/across/docs/AcrossTextFormat.pdf)
+/// for more information.
+/// In the contents, `.` or `:` represents a black square,
+/// and `X` represents a solution letter.
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
     pub(crate) contents: String,
@@ -23,35 +22,54 @@ pub struct Crossword {
 }
 
 impl Crossword {
-    /// Parses a crossword. Assumes that grid width and height are equal and returns
-    /// an Err if not. Newlines are removed.
-    pub fn square(contents: String) -> Result<Crossword, String> {
-        let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
-
-        let width = (without_newlines.len() as f64).sqrt() as usize;
-        if width * width != without_newlines.len() {
-            return Err(String::from("Contents are not a square."));
-        }
-        Ok(Crossword {
-            contents: without_newlines,
-            width,
-            height: width,
-        })
+    /// Parses a crossword from a file.
+    /// Err is returned of the file cannot be read or the contents cannot be parsed.
+    pub fn parse_from_file<P>(file_path: P) -> Result<Crossword, String> where P: AsRef<Path>, {
+        let name = file_path.as_ref().display().to_string();
+        let contents = fs::read_to_string(file_path)
+            .expect(format!("Could not read file {}", name).as_str());
+        Crossword::parse(contents)
     }
 
-    /// Parses a crossword. Assumes that width and height are as specified. If the length
-    /// of the input does not match the input dimensions, an Err is returned. Newlines are
-    /// removed.
-    pub fn rectangle(contents: String, width: usize, height: usize) -> Result<Crossword, String> {
-        let without_newlines: String = contents.chars().filter(|c| *c != '\n').collect();
-        if without_newlines.len() != width * height {
-            return Err(String::from("Contents do not match specified dimensions"));
-        }
+    /// Parses a crossword from a string.
+    /// Err is returned if the contents cannot be parsed.
+    pub fn parse(contents: String) -> Result<Crossword, String> {
+        let grid: Vec<Vec<char>> = contents
+            .lines()
+            .filter(|line| !line.is_empty())
+            .map(|line| line.chars().collect())
+            .collect();
+        let height = grid.len();
+        let width = grid[0].len();
+        let contents = Crossword::clean(&contents);
         Ok(Crossword {
-            contents: without_newlines,
+            contents,
             width,
             height,
         })
+    }
+
+    fn clean(contents: &String) -> String {
+        let cleaned: String = contents.chars()
+            .filter(|c| *c != '\n')
+            .collect();
+        cleaned
+            .replace("X", " ") // internally use space for blank squares
+    }
+
+    /// Returns all words with at least two letters
+    /// in the crossword for a given direction as a Vec of strings
+    pub fn words(&self, direction: Direction) -> Vec<String> {
+        let word_boundaries = parse_word_boundaries(self);
+        word_boundaries
+            .iter()
+            .filter(|wb| wb.direction == direction)
+            .map(|wb| {
+                let iter = WordIterator::new(self, wb);
+                iter.collect()
+            })
+            .filter(|word: &String| word.len() >= 2)
+            .collect()
     }
 }
 
@@ -136,13 +154,15 @@ impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for row in 0..self.height {
             for col in 0..self.width {
-                write!(
-                    f,
-                    "{}",
-                    self.contents.as_bytes()[row * self.width + col] as char
-                )?;
+                let char = self.contents.as_bytes()[row * self.width + col] as char;
+                // for unsolved cells, put back standard across file format X
+                // for an omitted solution letter instead of space which is used internally
+                let char = if char == ' ' { 'X' } else { char };
+                write!(f, "{}", char)?;
             }
-            writeln!(f)?;
+            if row < self.height - 1 {
+                writeln!(f)?;
+            }
         }
         Ok(())
     }
@@ -165,8 +185,8 @@ mod tests {
 
     #[test]
 
-    fn it_works() {
-        let result = Crossword::square(String::from(
+    fn parse_from_string_works() {
+        let result = Crossword::parse(String::from(
             "
 abc
 def
@@ -185,7 +205,11 @@ ghi
 
     #[test]
     fn crossword_iterator_works() {
-        let input = Crossword::square(String::from("ABCDEFGHI")).unwrap();
+        let input = Crossword::parse(String::from("
+ABC
+DEF
+GHI
+")).unwrap();
         let word_boundary = WordBoundary {
             start_col: 0,
             start_row: 0,
@@ -223,7 +247,11 @@ ghi
 
     #[test]
     fn crossword_iterator_eq_works() {
-        let input = Crossword::square(String::from("ABCB  C  ")).unwrap();
+        let input = Crossword::parse(String::from("
+ABC
+BXX
+CXX
+")).unwrap();
         let a = WordBoundary {
             start_col: 0,
             start_row: 0,
@@ -254,7 +282,11 @@ ghi
 
     #[test]
     fn crossword_iterator_hash_works() {
-        let input = Crossword::square(String::from("ABCB  C  ")).unwrap();
+        let input = Crossword::parse(String::from("
+ABC
+BXX
+CXX
+")).unwrap();
         let a = WordBoundary {
             start_col: 0,
             start_row: 0,
@@ -285,5 +317,20 @@ ghi
         set.insert(a_iter);
 
         assert!(set.contains(&b_iter));
+    }
+
+    #[test]
+    fn words_in_direction_works() {
+        let input = Crossword::parse(String::from("
+SIAM
+N.EM
+RYAL
+")).unwrap();
+
+        let across_words = input.words(Direction::Across);
+        let down_words = input.words(Direction::Down);
+
+        assert_eq!(vec!["SIAM", "EM", "RYAL"], across_words);
+        assert_eq!(vec!["SNR", "AEA", "MML"], down_words);
     }
 }

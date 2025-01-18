@@ -107,9 +107,9 @@ pub fn fill_one_word(candidate: &Crossword, iter: &WordIterator, word: &str) -> 
     }
 }
 
-pub fn build_square_word_boundary_lookup<'s>(
-    word_boundaries: &'s [WordBoundary],
-) -> FxHashMap<(Direction, usize, usize), &'s WordBoundary> {
+pub fn build_square_word_boundary_lookup(
+    word_boundaries: &[WordBoundary],
+) -> FxHashMap<(Direction, usize, usize), &WordBoundary> {
     let mut result = FxHashMap::default();
 
     for word_boundary in word_boundaries {
@@ -191,7 +191,7 @@ mod tests {
     #[test]
 
     fn fill_one_word_works() {
-        let c = Crossword::square(String::from(
+        let c = Crossword::parse(String::from(
             "
 abc
 def
@@ -214,7 +214,7 @@ ghi
                 ),
                 &String::from("cat")
             ),
-            Crossword::square(String::from(
+            Crossword::parse(String::from(
                 "
 cat
 def
@@ -238,7 +238,7 @@ ghi
                 ),
                 &String::from("cat"),
             ),
-            Crossword::square(String::from(
+            Crossword::parse(String::from(
                 "
 cbc
 aef

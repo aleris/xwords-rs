@@ -6,6 +6,7 @@ use crate::File;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TrieNode {
     contents: Option<char>,
@@ -44,10 +45,10 @@ impl TrieNode {
 
     fn display_helper(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        f: &mut fmt::Formatter<'_>,
         depth: usize,
         first_child: bool,
-    ) -> std::result::Result<(), std::fmt::Error> {
+    ) -> Result<(), fmt::Error> {
         if !first_child {
             for _ in 0..depth {
                 write!(f, "\t")?;
@@ -133,7 +134,7 @@ impl TrieNode {
 }
 
 impl fmt::Display for TrieNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         self.display_helper(f, 1, true)
     }
 }
@@ -144,7 +145,7 @@ pub struct Trie {
 }
 
 impl fmt::Display for Trie {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         self.root.fmt(f)
     }
 }
@@ -184,7 +185,6 @@ impl Trie {
 
 #[cfg(test)]
 mod tests {
-
     use crate::File;
     use rustc_hash::FxHashMap;
 

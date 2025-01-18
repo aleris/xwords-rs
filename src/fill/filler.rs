@@ -3,6 +3,7 @@ An algorithm that composes algorithms and data structures throughout this
 crate. This is where the magic happens.
 */
 
+use rand::seq::SliceRandom;
 use std::{collections::HashSet, hash::BuildHasherDefault, time::Instant};
 
 use rustc_hash::FxHasher;
@@ -24,14 +25,16 @@ pub struct Filler<'s> {
     is_viable_cache: CachedIsViable,
 
     trie: &'s Trie,
+    random: bool,
 }
 
 impl<'s> Filler<'s> {
-    pub fn new(trie: &'s Trie) -> Filler<'s> {
+    pub fn new(trie: &'s Trie, random: bool) -> Filler<'s> {
         Filler {
             word_cache: CachedWords::default(),
             is_viable_cache: CachedIsViable::default(),
             trie,
+            random,
         }
     }
 }
@@ -78,7 +81,11 @@ impl<'s> Fill for Filler<'s> {
             let orthogonals =
                 words_orthogonal_to_word(&to_fill.word_boundary, &word_boundary_lookup);
 
-            let potential_fills = self.word_cache.words(to_fill.clone(), self.trie);
+            let mut potential_fills = self.word_cache.words(to_fill.clone(), self.trie).to_vec();
+
+            if self.random {
+                potential_fills.shuffle(&mut rand::rng());
+            }
 
             for potential_fill in potential_fills {
                 let new_candidate = fill_one_word(&candidate, &to_fill.clone(), &potential_fill);
@@ -108,7 +115,6 @@ impl<'s> Fill for Filler<'s> {
 
 #[cfg(test)]
 mod tests {
-
     use crate::{fill::Fill, Trie};
 
     use crate::Crossword;
@@ -124,22 +130,22 @@ mod tests {
 
     #[test]
     fn medium_grid() {
-        let grid = Crossword::square(String::from(
+        let grid = Crossword::parse(String::from(
             "
-    ***
-    ***
-    ***
-       
-***    
-***    
-***    
+XXXX...
+XXXX...
+XXXX...
+XXXXXXX
+...XXXX
+...XXXX
+...XXXX
 ",
         ))
         .unwrap();
 
         let now = Instant::now();
         let trie = Trie::load_default().expect("Failed to load trie");
-        let mut filler = Filler::new(&trie);
+        let mut filler = Filler::new(&trie, false);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
