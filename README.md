@@ -30,12 +30,14 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -a, --author <AUTHOR>          Author name across output. Defaults to `xwords-rs`.
-    -c, --copyright <COPYRIGHT>    Copyright text for across output. Defaults to `<YEAR> Public domain.`
-    -f, --format <FORMAT>          Output format. Can be `grid` for simple grid or `across` for Across Puzzle V2 text.
-                                   Default is `grid`.
-    -i, --input <FILE>             Input crossword file location.
-    -t, --title <TITLE>            Puzzle title for across output. Defaults to title case file name.
+    -a, --author <AUTHOR>            Author name across output. Defaults to `xwords-rs`.
+    -c, --copyright <COPYRIGHT>      Copyright text for across output. Defaults to `<YEAR> Public domain.`
+    -f, --format <FORMAT>            Output format. Can be `grid` for simple grid or `across` for Across Puzzle V2 text.
+                                     Default is `grid`.
+    -i, --input <FILE>               Input crossword file location.
+    -t, --title <TITLE>              Puzzle title for across output. Defaults to title case file name.
+    -w, --words <WORDS_FILE_NAME>    File name from /words without extension to use for filling. Default is `en`.
+
 ```
 
 Example:
@@ -111,6 +113,20 @@ SKORT
 ```
 
 The <ACROSS> and <DOWN> are the word placeholders for clues.
+
+To use other word lists, you can specify the file name from the `/words` directory without the extension:
+
+```bash
+$ xwords --input grids/waffle.txt --random --words ro_dex_095
+```
+
+```text
+DINȚA
+E.O.L
+PĂTAT
+U.A.U
+SĂTUL
+```
 
 ## Library
 

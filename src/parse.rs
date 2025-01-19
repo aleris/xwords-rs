@@ -9,12 +9,11 @@ const BLACK_SQUARE: [char; 2] = ['.', ':'];
 ///
 /// Note that every square in a Crossword is present in two word boundaries; one `Down` and
 /// one `Across`.
+/// The one-letter "words" are not included in the result.
 ///
 /// Also note that as a `Crossword` is being filled, the word boundaries do not change.
 pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     let mut result = vec![];
-
-    let byte_array = crossword.contents.as_bytes();
 
     let mut start_row = None;
     let mut start_col = None;
@@ -22,7 +21,7 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
 
     for row in 0..crossword.height {
         for col in 0..crossword.width {
-            let current_char = byte_array[row * crossword.width + col] as char;
+            let current_char = crossword.contents[row * crossword.width + col];
             if !BLACK_SQUARE.contains(&current_char) {
                 // found a char; is it our first?
                 if start_row == None {
@@ -68,7 +67,7 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
 
     for col in 0..crossword.width {
         for row in 0..crossword.height {
-            let current_char = byte_array[row * crossword.width + col] as char;
+            let current_char = crossword.contents[row * crossword.width + col];
             if !BLACK_SQUARE.contains(&current_char) {
                 // found a char; is it our first?
                 if start_row == None {
@@ -107,7 +106,7 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
         }
     }
 
-    result
+    result.into_iter().filter(|word| word.length > 1).collect()
 }
 
 /// A representation of a word in a `Crossword`. Note that a `WordBoundary` is not
@@ -204,7 +203,7 @@ ghi
     fn parse_word_boundaries_small_grid_works() {
         let c = Crossword::parse(String::from(
             "
-X..
+XX.
 X..
 XXX
 ",
@@ -213,30 +212,30 @@ XXX
 
         let result = parse_word_boundaries(&c);
 
-        assert_eq!(result.len(), 6);
+        assert_eq!(result.len(), 3);
         assert_eq!(
             result[0],
             WordBoundary {
-                start_col: 0,
                 start_row: 0,
-                length: 1,
+                start_col: 0,
+                length: 2,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[1],
+            WordBoundary {
+                start_row: 2,
+                start_col: 0,
+                length: 3,
                 direction: Direction::Across
             }
         );
         assert_eq!(
             result[2],
             WordBoundary {
-                start_col: 0,
-                start_row: 2,
-                length: 3,
-                direction: Direction::Across
-            }
-        );
-        assert_eq!(
-            result[3],
-            WordBoundary {
-                start_col: 0,
                 start_row: 0,
+                start_col: 0,
                 length: 3,
                 direction: Direction::Down
             }
@@ -247,7 +246,7 @@ XXX
     fn parse_word_boundaries_with_diagramless_black_square_works() {
         let c = Crossword::parse(String::from(
             "
-X::
+XX:
 X::
 XXX
 ",
@@ -256,30 +255,30 @@ XXX
 
         let result = parse_word_boundaries(&c);
 
-        assert_eq!(result.len(), 6);
+        assert_eq!(result.len(), 3);
         assert_eq!(
             result[0],
             WordBoundary {
-                start_col: 0,
                 start_row: 0,
-                length: 1,
+                start_col: 0,
+                length: 2,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[1],
+            WordBoundary {
+                start_row: 2,
+                start_col: 0,
+                length: 3,
                 direction: Direction::Across
             }
         );
         assert_eq!(
             result[2],
             WordBoundary {
-                start_col: 0,
-                start_row: 2,
-                length: 3,
-                direction: Direction::Across
-            }
-        );
-        assert_eq!(
-            result[3],
-            WordBoundary {
-                start_col: 0,
                 start_row: 0,
+                start_col: 0,
                 length: 3,
                 direction: Direction::Down
             }
