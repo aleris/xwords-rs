@@ -11,6 +11,7 @@ fn main() -> Result<(), String> {
     let matches = App::new("xwords")
         .arg(Arg::from_usage("-i, --input <FILE> 'Input crossword file location.'"))
         .arg(Arg::from_usage("[random] -r, --random 'Randomize word fill. Default is false.'"))
+        .arg(Arg::from_usage("[words] -w, --words <WORDS_FILE_NAME> 'File name from /words without extension to use for filling. Default is `en`.'"))
         .arg(Arg::from_usage("[format] -f, --format <FORMAT> 'Output format. Can be `grid` for simple grid or `across` for Across Puzzle V2 text. Default is `grid`.'"))
         .arg(Arg::from_usage("[title] -t, --title <TITLE> 'Puzzle title for across output. Defaults to title case file name.'"))
         .arg(Arg::from_usage("[author] -a, --author <AUTHOR> 'Author name across output. Defaults to `xwords-rs`.'"))
@@ -36,7 +37,9 @@ fn main() -> Result<(), String> {
         });
     }
 
-    let trie = Trie::load_default().expect("Failed to load trie");
+    let words = matches.value_of("words").unwrap_or("en");
+
+    let trie = Trie::load(words).expect("Failed to load trie");
     let crossword = Filler::new(&trie, random).fill(&input);
 
     match crossword {

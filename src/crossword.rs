@@ -16,7 +16,7 @@ use std::path::Path;
 /// and `X` represents a solution letter.
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct Crossword {
-    pub(crate) contents: String,
+    pub(crate) contents: Vec<char>,
     pub(crate) width: usize,
     pub(crate) height: usize,
 }
@@ -39,8 +39,22 @@ impl Crossword {
             .filter(|line| !line.is_empty())
             .map(|line| line.chars().collect())
             .collect();
+        
+        // Validate grid dimensions
         let height = grid.len();
+        if height == 0 {
+            return Err("Empty grid".to_string());
+        }
         let width = grid[0].len();
+        if width == 0 {
+            return Err("Empty row in grid".to_string());
+        }
+        
+        // Ensure all rows have same width
+        if grid.iter().any(|row| row.len() != width) {
+            return Err("Inconsistent row lengths".to_string());
+        }
+        
         let contents = Crossword::clean(&contents);
         Ok(Crossword {
             contents,
@@ -49,12 +63,11 @@ impl Crossword {
         })
     }
 
-    fn clean(contents: &String) -> String {
-        let cleaned: String = contents.chars()
+    fn clean(contents: &String) -> Vec<char> {
+        contents.chars()
             .filter(|c| *c != '\n')
-            .collect();
-        cleaned
-            .replace("X", " ") // internally use space for blank squares
+            .map(|c| if c == 'X' { ' ' } else { c })  // internally use space for blank squares
+            .collect()
     }
 
     /// Returns all words with at least two letters
@@ -115,14 +128,14 @@ impl<'s> Iterator for WordIterator<'s> {
                 let char_index = self.word_boundary.start_row * self.crossword.width
                     + self.word_boundary.start_col
                     + self.index;
-                let result = self.crossword.contents.as_bytes()[char_index] as char;
+                let result = self.crossword.contents[char_index];
                 self.index += 1;
                 Some(result)
             }
             Direction::Down => {
                 let char_index = (self.word_boundary.start_row + self.index) * self.crossword.width
                     + self.word_boundary.start_col;
-                let result = self.crossword.contents.as_bytes()[char_index] as char;
+                let result = self.crossword.contents[char_index];
                 self.index += 1;
                 Some(result)
             }
@@ -154,7 +167,7 @@ impl fmt::Display for Crossword {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for row in 0..self.height {
             for col in 0..self.width {
-                let char = self.contents.as_bytes()[row * self.width + col] as char;
+                let char = self.contents[row * self.width + col];
                 // for unsolved cells, put back standard across file format X
                 // for an omitted solution letter instead of space which is used internally
                 let char = if char == ' ' { 'X' } else { char };
@@ -197,7 +210,7 @@ ghi
         assert!(result.is_ok());
 
         let c = result.unwrap();
-        assert_eq!(String::from("abcdefghi"), c.contents);
+        assert_eq!(String::from("abcdefghi"), c.contents.iter().collect::<String>());
         assert_eq!(3, c.width);
         assert_eq!(3, c.height);
         println!("{}", c);

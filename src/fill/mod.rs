@@ -64,13 +64,15 @@ pub fn is_viable_reuse(
 }
 
 pub fn fill_one_word(candidate: &Crossword, iter: &WordIterator, word: &str) -> Crossword {
-    let mut result_contents = String::with_capacity(iter.word_boundary.length);
+    let word_chars: Vec<char> = word.chars().collect();
+
+    let mut result_contents = Vec::with_capacity(candidate.contents.len());
     let word_boundary = iter.word_boundary;
-    let mut word_iter = word.chars();
+    let mut word_iter = word_chars.into_iter();
 
     match word_boundary.direction {
         Direction::Across => {
-            for (index, c) in candidate.contents.chars().enumerate() {
+            for (index, c) in candidate.contents.iter().enumerate() {
                 let row = index / candidate.width;
                 let col = index % candidate.width;
 
@@ -80,12 +82,12 @@ pub fn fill_one_word(candidate: &Crossword, iter: &WordIterator, word: &str) -> 
                 {
                     result_contents.push(word_iter.next().unwrap());
                 } else {
-                    result_contents.push(c);
+                    result_contents.push(*c);
                 }
             }
         }
         Direction::Down => {
-            for (index, c) in candidate.contents.chars().enumerate() {
+            for (index, c) in candidate.contents.iter().enumerate() {
                 let row = index / candidate.width;
                 let col = index % candidate.width;
 
@@ -95,7 +97,7 @@ pub fn fill_one_word(candidate: &Crossword, iter: &WordIterator, word: &str) -> 
                 {
                     result_contents.push(word_iter.next().unwrap());
                 } else {
-                    result_contents.push(c);
+                    result_contents.push(*c);
                 }
             }
         }
@@ -159,22 +161,22 @@ pub fn words_orthogonal_to_word<'s>(
             for index in 0..to_fill.length {
                 let col = to_fill.start_col + index;
 
-                result.push(
-                    *word_boundary_lookup
-                        .get(&(Direction::Down, to_fill.start_row, col))
-                        .unwrap(),
-                );
+                if let Some(boundary) =
+                    word_boundary_lookup.get(&(Direction::Down, to_fill.start_row, col))
+                {
+                    result.push(*boundary);
+                }
             }
         }
         Direction::Down => {
             for index in 0..to_fill.length {
                 let row = to_fill.start_row + index;
 
-                result.push(
-                    *word_boundary_lookup
-                        .get(&(Direction::Across, row, to_fill.start_col))
-                        .unwrap(),
-                );
+                if let Some(boundary) =
+                    word_boundary_lookup.get(&(Direction::Across, row, to_fill.start_col))
+                {
+                    result.push(*boundary);
+                }
             }
         }
     }
