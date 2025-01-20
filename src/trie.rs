@@ -5,7 +5,10 @@ A data structure that provides efficient lookup of partially filled words.
 use crate::File;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::io::ErrorKind::InvalidInput;
+use std::io::{BufRead, Error};
+use std::path::PathBuf;
+use std::{fmt, io};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TrieNode {
@@ -16,30 +19,26 @@ pub struct TrieNode {
 
 impl TrieNode {
     fn add_sequence(mut self, chars: &str) -> TrieNode {
-        match chars.as_bytes().get(0) {
-            Some(val) => {
-                match self.children.remove_entry(&(*val as char)) {
-                    Some((_, child)) => {
-                        self.children
-                            .insert(*val as char, child.add_sequence(&chars[1..]));
-                    }
-                    None => {
-                        let tmp = TrieNode {
-                            children: FxHashMap::default(),
-                            contents: Some(*val as char),
-                            is_terminal: false,
-                        };
-                        // create child and iterate on it
-                        self.children
-                            .insert(*val as char, tmp.add_sequence(&chars[1..]));
-                    }
+        match chars.chars().next() {
+            Some(val) => match self.children.remove_entry(&val) {
+                Some((_, child)) => {
+                    let rest: String = chars.chars().skip(1).collect();
+                    self.children.insert(val, child.add_sequence(&rest));
                 }
-            }
+                None => {
+                    let tmp = TrieNode {
+                        children: FxHashMap::default(),
+                        contents: Some(val),
+                        is_terminal: false,
+                    };
+                    let rest: String = chars.chars().skip(1).collect();
+                    self.children.insert(val, tmp.add_sequence(&rest));
+                }
+            },
             None => {
                 self.is_terminal = true;
             }
         }
-
         self
     }
 
@@ -151,10 +150,17 @@ impl fmt::Display for Trie {
 }
 
 impl Trie {
-    pub fn load_default() -> Result<Trie, String> {
-        let file = File::open("./trie.bincode").unwrap();
-        let load = bincode::deserialize_from::<File, Trie>(file);
-        load.map_err(|_| String::from("Failed to load trie."))
+    pub fn load_default() -> Result<Trie, Error> {
+        Trie::load("en")
+    }
+
+    pub fn load(name: &str) -> Result<Trie, Error> {
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push(format!("words/{}.bincode", name));
+        let file = File::open(path.clone())
+            .map_err(|e| Error::new(e.kind(), format!("Could not open file {:?}", path)))?;
+        bincode::deserialize_from::<File, Trie>(file)
+            .map_err(|e| Error::new(InvalidInput, e.to_string()))
     }
 
     pub fn build(words: Vec<String>) -> Trie {
@@ -171,6 +177,36 @@ impl Trie {
         Trie { root }
     }
 
+    pub fn build_bin_code(file_path: &PathBuf) -> Result<PathBuf, Error> {
+        let name = file_path.display().to_string();
+        let file_name = file_path
+            .file_stem()
+            .ok_or_else(|| Error::new(InvalidInput, "File has no stem"))?
+            .to_str()
+            .ok_or_else(|| Error::new(InvalidInput, "File stem is not valid"))?;
+        let out_path = PathBuf::from(format!("words/{}.bincode", file_name));
+        let file = File::open(file_path)
+            .map_err(|e| Error::new(e.kind(), format!("Could not open file {}", name)))?;
+        let extension = file_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .ok_or_else(|| Error::new(InvalidInput, "File has no extension"))?;
+        let words = match extension {
+            "json" => Trie::load_words_from_json(&file),
+            "txt" => Trie::load_words_from_text(&file),
+            ext => Err(Error::new(
+                InvalidInput,
+                format!("Unsupported file format: {}", ext),
+            ))?,
+        };
+        let words = Trie::make_words_uppercase(words);
+        let trie = Trie::build(words);
+        let trie_file = File::create(&out_path)?;
+        bincode::serialize_into(trie_file, &trie)
+            .map_err(|e| Error::new(InvalidInput, e.to_string()))?;
+        Ok(out_path)
+    }
+
     pub fn words<T: Iterator<Item = char> + Clone>(&self, pattern: T) -> Vec<String> {
         let mut result = Vec::with_capacity(4);
         let mut partial = String::with_capacity(4);
@@ -181,33 +217,62 @@ impl Trie {
     pub fn is_viable<T: Iterator<Item = char> + Clone>(&self, chars: T) -> bool {
         self.root.is_viable(chars)
     }
+
+    fn load_words_from_json(file: &File) -> Vec<String> {
+        let words = serde_json::from_reader(file).expect("JSON was not well-formatted");
+        words
+    }
+
+    fn load_words_from_text(file: &File) -> Vec<String> {
+        let words = io::BufReader::new(file)
+            .lines()
+            .flatten()
+            .filter(|s| !s.is_empty() && !s.starts_with("#"))
+            .collect::<Vec<String>>();
+        words
+    }
+
+    fn make_words_uppercase(words: Vec<String>) -> Vec<String> {
+        words.into_iter().map(|s| s.to_uppercase()).collect()
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::File;
     use rustc_hash::FxHashMap;
 
-    use std::collections::HashSet;
-
     use super::{Trie, TrieNode};
+    use std::collections::HashSet;
+    use std::path::PathBuf;
 
     #[test]
     #[ignore]
-    fn rebuild_serialized_trie() {
-        let file = File::open("wordlist.json").unwrap();
-        let words = serde_json::from_reader(file).expect("JSON was not well-formatted");
-        let trie = Trie::build(words);
-        let trie_file = File::create("trie.bincode").unwrap();
-        let trie_result = bincode::serialize_into(trie_file, &trie);
-        assert!(trie_result.is_ok());
+    fn rebuild_serialized_trie_en() {
+        let result = Trie::build_bin_code(&PathBuf::from("words/en.json"));
+        assert!(result.is_ok());
     }
 
     #[test]
-    fn test_trie_load() {
-        let file = File::open("./trie.bincode").unwrap();
-        let load = bincode::deserialize_from::<File, Trie>(file);
-        assert!(load.is_ok());
+    fn test_trie_load_en() {
+        let trie = Trie::load("en");
+        assert!(trie.is_ok());
+    }
+
+    #[test]
+    #[ignore]
+    fn rebuild_serialized_trie_ro_dex_095() {
+        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_095.txt"));
+        if let Err(e) = result {
+            panic!("{}", e);
+        }
+    }
+
+    #[test]
+    fn test_trie_load_ro_dex_095() {
+        let trie = Trie::load("ro_dex_095");
+        if let Err(e) = trie {
+            panic!("{}", e);
+        }
     }
 
     #[test]

@@ -70,13 +70,14 @@ impl<'s> Fill for Filler<'s> {
                 .map(|word_boundary| WordIterator::new(&candidate, word_boundary))
                 .filter(|iter| iter.clone().any(|c| c == ' '))
                 .min_by_key(|iter| {
+                    let words = self.word_cache.words(iter.clone(), self.trie);
                     (
-                        self.word_cache.words(iter.clone(), self.trie).len(),
+                        words.len(),
                         iter.word_boundary.start_row,
                         iter.word_boundary.start_col,
                     )
                 })
-                .unwrap();
+                .ok_or_else(|| "No fillable words found".to_string())?;
 
             let orthogonals =
                 words_orthogonal_to_word(&to_fill.word_boundary, &word_boundary_lookup);
@@ -101,7 +102,7 @@ impl<'s> Fill for Filler<'s> {
                 already_used.clear();
 
                 if viable {
-                    if !new_candidate.contents.contains(' ') {
+                    if !new_candidate.contents.contains(&' ') {
                         return Ok(new_candidate);
                     }
                     candidates.push(new_candidate);
@@ -109,7 +110,7 @@ impl<'s> Fill for Filler<'s> {
             }
         }
 
-        Err(String::from("We failed"))
+        Err("No valid solution found".to_string())
     }
 }
 
@@ -146,6 +147,50 @@ XXXXXXX
         let now = Instant::now();
         let trie = Trie::load_default().expect("Failed to load trie");
         let mut filler = Filler::new(&trie, false);
+        let filled_puz = filler.fill(&grid).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+    #[test]
+    fn medium_grid_ro() {
+        let grid = Crossword::parse(String::from(
+            "
+XXXX...
+XXXX...
+XXXX...
+XXXXXXX
+...XXXX
+...XXXX
+...XXXX
+",
+        ))
+            .unwrap();
+
+        let now = Instant::now();
+        let trie = Trie::load("ro_dex_095").expect("Failed to load trie");
+        let mut filler = Filler::new(&trie, true);
+        let filled_puz = filler.fill(&grid).unwrap();
+        println!("Filled in {} seconds.", now.elapsed().as_secs());
+        println!("{}", filled_puz);
+    }
+
+    #[test]
+    fn waffle_grid_ro_dex_095() {
+        let grid = Crossword::parse(String::from(
+            "
+XXXXX
+X.X.X
+XXXXX
+X.X.X
+XXXXX
+",
+        ))
+            .unwrap();
+
+        let now = Instant::now();
+        let trie = Trie::load("ro_dex_095").expect("Failed to load trie");
+        let mut filler = Filler::new(&trie, true);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
