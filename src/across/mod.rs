@@ -1,6 +1,8 @@
 use crate::crossword::{Crossword, Direction};
 use std::fmt;
 
+/// Formats a Crossword into Across Puzzle V2 text file format.
+/// See https://www.litsoft.com/across/docs/AcrossTextFormat.pdf
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub struct AcrossFileFormat {
     pub(crate) crossword: Crossword,

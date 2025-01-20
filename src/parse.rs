@@ -3,7 +3,7 @@ Utility methods to split a `Crossword` into component words.
 */
 use crate::{Crossword, Direction};
 
-const BLACK_SQUARE: char = '.';
+const BLACK_SQUARE: [char; 2] = ['.', ':'];
 
 /// Parses a Crossword into a `Vec<WordBoundary>`. Returns all words present in the puzzle.
 ///
@@ -23,7 +23,7 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     for row in 0..crossword.height {
         for col in 0..crossword.width {
             let current_char = byte_array[row * crossword.width + col] as char;
-            if current_char != BLACK_SQUARE {
+            if !BLACK_SQUARE.contains(&current_char) {
                 // found a char; is it our first?
                 if start_row == None {
                     start_row = Some(row);
@@ -69,7 +69,7 @@ pub fn parse_word_boundaries(crossword: &Crossword) -> Vec<WordBoundary> {
     for col in 0..crossword.width {
         for row in 0..crossword.height {
             let current_char = byte_array[row * crossword.width + col] as char;
-            if current_char != BLACK_SQUARE {
+            if !BLACK_SQUARE.contains(&current_char) {
                 // found a char; is it our first?
                 if start_row == None {
                     start_row = Some(row);
@@ -206,6 +206,49 @@ ghi
             "
 X..
 X..
+XXX
+",
+        ))
+            .unwrap();
+
+        let result = parse_word_boundaries(&c);
+
+        assert_eq!(result.len(), 6);
+        assert_eq!(
+            result[0],
+            WordBoundary {
+                start_col: 0,
+                start_row: 0,
+                length: 1,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[2],
+            WordBoundary {
+                start_col: 0,
+                start_row: 2,
+                length: 3,
+                direction: Direction::Across
+            }
+        );
+        assert_eq!(
+            result[3],
+            WordBoundary {
+                start_col: 0,
+                start_row: 0,
+                length: 3,
+                direction: Direction::Down
+            }
+        );
+    }
+
+    #[test]
+    fn parse_word_boundaries_with_diagramless_black_square_works() {
+        let c = Crossword::parse(String::from(
+            "
+X::
+X::
 XXX
 ",
         ))
