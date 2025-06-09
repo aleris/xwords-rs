@@ -58,8 +58,8 @@ impl<'s> Fill for Filler<'s> {
             candidate_count += 1;
 
             if candidate_count % 10_000 == 0 {
-                println!("{}", candidate);
-                println!(
+                eprintln!("{}", candidate);
+                eprintln!(
                     "Throughput: {}",
                     candidate_count as f32 / thread_start.elapsed().as_millis() as f32
                 );
