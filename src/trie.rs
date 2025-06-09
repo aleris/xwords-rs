@@ -259,8 +259,32 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn rebuild_serialized_trie_ro_dex_095() {
+    //#[ignore]
+    fn rebuild_serialized_trie_ro_dex() {
+        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_000.txt"));
+        if let Err(e) = result {
+            panic!("{}", e);
+        }
+        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_025.txt"));
+        if let Err(e) = result {
+            panic!("{}", e);
+        }
+        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_050.txt"));
+        if let Err(e) = result {
+            panic!("{}", e);
+        }
+        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_060.txt"));
+        if let Err(e) = result {
+            panic!("{}", e);
+        }
+        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_070.txt"));
+        if let Err(e) = result {
+            panic!("{}", e);
+        }
+        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_080.txt"));
+        if let Err(e) = result {
+            panic!("{}", e);
+        }
         let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_095.txt"));
         if let Err(e) = result {
             panic!("{}", e);
@@ -268,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn test_trie_load_ro_dex_095() {
+    fn test_trie_load_ro_dex() {
         let trie = Trie::load("ro_dex_095");
         if let Err(e) = trie {
             panic!("{}", e);
