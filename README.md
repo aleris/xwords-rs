@@ -27,6 +27,7 @@ USAGE:
 
 FLAGS:
     -h, --help       Prints help information
+    -l, --log        Prints intermediate progress information to stderr. Default is false.
     -p, --profile    Profile the program. Default is false.
     -r, --random     Randomize word fill. Default is false.
     -V, --version    Prints version information

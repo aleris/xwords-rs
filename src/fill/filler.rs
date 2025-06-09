@@ -4,11 +4,7 @@ crate. This is where the magic happens.
 */
 
 use rand::seq::SliceRandom;
-use std::{
-    collections::HashSet,
-    hash::BuildHasherDefault,
-    time::Instant,
-};
+use std::{collections::HashSet, hash::BuildHasherDefault, time::Instant};
 
 use rustc_hash::FxHasher;
 
@@ -31,16 +27,18 @@ pub struct Filler<'s> {
     trie: &'s Trie,
     random: bool,
     max_time_seconds: u64,
+    log: bool,
 }
 
 impl<'s> Filler<'s> {
-    pub fn new(trie: &'s Trie, random: bool, max_time_seconds: Option<u64>) -> Filler<'s> {
+    pub fn new(trie: &'s Trie, random: bool, max_time_seconds: u64, log: bool) -> Filler<'s> {
         Filler {
             word_cache: CachedWords::default(),
             is_viable_cache: CachedIsViable::default(),
             trie,
             random,
-            max_time_seconds: max_time_seconds.unwrap_or(120),
+            max_time_seconds,
+            log: log,
         }
     }
 }
@@ -55,7 +53,6 @@ impl<'s> Fill for Filler<'s> {
             word_boundaries.len(),
             BuildHasherDefault::<FxHasher>::default(),
         );
-
         let mut candidates = vec![initial_crossword.to_owned()];
 
         let word_boundary_lookup = build_square_word_boundary_lookup(&word_boundaries);
@@ -65,21 +62,25 @@ impl<'s> Fill for Filler<'s> {
 
             let elapsed_secs = start_time.elapsed().as_secs();
             if elapsed_secs > self.max_time_seconds {
-                eprintln!(
-                    "[DEBUG] No solution found after time limit of {} seconds reached, {} candidates",
-                    self.max_time_seconds, candidate_count
-                );
+                if self.log {
+                    eprintln!(
+                        "[INFO] Time limit of {} seconds reached after {} candidates",
+                        self.max_time_seconds, candidate_count
+                    );
+                }
                 return Err(format!(
                     "Time limit of {} seconds reached after {} candidates",
                     self.max_time_seconds, candidate_count
                 ));
             }
 
-            if candidate_count % 10_000 == 0 {
-                eprintln!("[DEBUG] Current candidate:\n{}", candidate);
+            if self.log && (candidate_count % 10_000 == 0) {
+                eprintln!("[INFO] Current candidate:\n{}", candidate);
                 eprintln!(
-                    "[DEBUG] Throughput: {} candidates/ms",
-                    candidate_count as f32 / start_time.elapsed().as_millis() as f32
+                    "[INFO] Throughput: {} candidates/ms, total {} candidates, time taken: {} seconds",
+                    candidate_count as f32 / start_time.elapsed().as_millis() as f32,
+                    candidate_count,
+                    start_time.elapsed().as_secs(),
                 );
             }
 
@@ -121,11 +122,13 @@ impl<'s> Fill for Filler<'s> {
 
                 if viable {
                     if !new_candidate.contents.contains(&' ') {
-                        eprintln!(
-                            "[DEBUG] Ok, total candidates: {}, time taken: {} ms",
-                            candidate_count,
-                            start_time.elapsed().as_millis()
-                        );
+                        if self.log {
+                            eprintln!(
+                                "[INFO] Found a complete solution after {} candidates, time taken: {} ms",
+                                candidate_count,
+                                start_time.elapsed().as_millis(),
+                            );
+                        }
                         return Ok(new_candidate);
                     }
                     candidates.push(new_candidate);
@@ -169,7 +172,7 @@ XXXXXXX
 
         let now = Instant::now();
         let trie = Trie::load_default().expect("Failed to load trie");
-        let mut filler = Filler::new(&trie, false, None);
+        let mut filler = Filler::new(&trie, false, 60, true);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
@@ -192,7 +195,7 @@ XXXXXXX
 
         let now = Instant::now();
         let trie = Trie::load("ro_dex_080").expect("Failed to load trie");
-        let mut filler = Filler::new(&trie, true, None);
+        let mut filler = Filler::new(&trie, true, 60, true);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
@@ -213,7 +216,7 @@ XXXXX
 
         let now = Instant::now();
         let trie = Trie::load("ro_dex_000").expect("Failed to load trie");
-        let mut filler = Filler::new(&trie, true, None);
+        let mut filler = Filler::new(&trie, true, 60, true);
         let filled_puz = filler.fill(&grid).unwrap();
         println!("Filled in {} seconds.", now.elapsed().as_secs());
         println!("{}", filled_puz);
