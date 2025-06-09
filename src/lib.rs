@@ -23,7 +23,12 @@ pub mod fill;
 pub mod parse;
 pub mod trie;
 
-pub fn fill_crossword_with_default_wordlist(crossword: &Crossword, random: bool) -> Result<Crossword, String> {
+pub fn fill_crossword_with_default_wordlist(
+    crossword: &Crossword,
+    random: bool,
+    max_time_seconds: u64,
+    debug: bool,
+) -> Result<Crossword, String> {
     let trie = Trie::load_default().expect("Failed to load trie");
-    Filler::new(&trie, random, None).fill(crossword)
+    Filler::new(&trie, random, max_time_seconds, debug).fill(crossword)
 }

@@ -17,6 +17,7 @@ fn main() -> Result<(), String> {
         .arg(Arg::from_usage("[title] -t, --title <TITLE> 'Puzzle title for across output. Defaults to title case file name.'"))
         .arg(Arg::from_usage("[author] -a, --author <AUTHOR> 'Author name across output. Defaults to `xwords-rs`.'"))
         .arg(Arg::from_usage("[copyright] -c, --copyright <COPYRIGHT> 'Copyright text for across output. Defaults to `<YEAR> Public domain.`'"))
+        .arg(Arg::from_usage("[log] -l, --log 'Prints intermediate progress information to stderr. Default is false.'"))
         .arg(Arg::from_usage("[profile] -p, --profile 'Profile the program. Default is false.'"))
         .get_matches();
 
@@ -44,8 +45,10 @@ fn main() -> Result<(), String> {
         .and_then(|s| s.parse::<u64>().ok())
         .unwrap_or(120); // Default to 120 seconds (2 minutes)
     
+    let log = matches.is_present("log");
+    
     let trie = Trie::load(words).expect("Failed to load trie");
-    let crossword = Filler::new(&trie, random, Some(max_time_seconds)).fill(&input);
+    let crossword = Filler::new(&trie, random, max_time_seconds, log).fill(&input);
 
     match crossword {
         Ok(crossword) => {
