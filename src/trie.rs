@@ -259,7 +259,7 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
+    #[ignore]
     fn rebuild_serialized_trie_ro_dex() {
         let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_000.txt"));
         if let Err(e) = result {
@@ -285,15 +285,11 @@ mod tests {
         if let Err(e) = result {
             panic!("{}", e);
         }
-        let result = Trie::build_bin_code(&PathBuf::from("words/ro_dex_095.txt"));
-        if let Err(e) = result {
-            panic!("{}", e);
-        }
     }
 
     #[test]
     fn test_trie_load_ro_dex() {
-        let trie = Trie::load("ro_dex_095");
+        let trie = Trie::load("ro_dex_000");
         if let Err(e) = trie {
             panic!("{}", e);
         }

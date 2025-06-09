@@ -17,9 +17,11 @@ but please be aware that the future of this project is somewhat uncertain.
 
 ## CLI
 
-This command fills a grid that is stored in a local file using a default wordlist.
+This command fills a grid that is stored in a local file using a wordlist.
 
 ```text
+xwords 
+
 USAGE:
     xwords [FLAGS] [OPTIONS] --input <FILE>
 
@@ -35,9 +37,9 @@ OPTIONS:
     -f, --format <FORMAT>            Output format. Can be `grid` for simple grid or `across` for Across Puzzle V2 text.
                                      Default is `grid`.
     -i, --input <FILE>               Input crossword file location.
+    -m, --max-time <SECONDS>         Maximum number of seconds to process. Default is 120s (2 minutes).
     -t, --title <TITLE>              Puzzle title for across output. Defaults to title case file name.
     -w, --words <WORDS_FILE_NAME>    File name from /words without extension to use for filling. Default is `en`.
-
 ```
 
 Example:
@@ -117,7 +119,7 @@ The <ACROSS> and <DOWN> are the word placeholders for clues.
 To use other word lists, you can specify the file name from the `/words` directory without the extension:
 
 ```bash
-$ xwords --input grids/waffle.txt --random --words ro_dex_095
+$ xwords --input grids/waffle.txt --random --words ro_dex_000
 ```
 
 ```text
@@ -127,6 +129,14 @@ PĂTAT
 U.A.U
 SĂTUL
 ```
+
+Included word lists are:
+- `en` - English words (default) - contains a rather large set of common words, some are not that common.
+- `ro_dex_NNN` - Romanian words - contains a Romanian words from scrabble dictionary. 
+  NNN is the usage frequency, e.g. `ro_dex_080` is the most common 80% of words. 
+  The frequency is not very accurate, but it gives a good idea of the most common words.
+  Included frequencies are: `080`, `070`, `060`, `050`, `000`. 
+  The last is for all words in scrabble dictionary.
 
 ## Library
 
