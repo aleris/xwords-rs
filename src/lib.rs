@@ -25,5 +25,5 @@ pub mod trie;
 
 pub fn fill_crossword_with_default_wordlist(crossword: &Crossword, random: bool) -> Result<Crossword, String> {
     let trie = Trie::load_default().expect("Failed to load trie");
-    Filler::new(&trie, random).fill(crossword)
+    Filler::new(&trie, random, None).fill(crossword)
 }

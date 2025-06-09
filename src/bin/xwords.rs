@@ -11,6 +11,7 @@ fn main() -> Result<(), String> {
     let matches = App::new("xwords")
         .arg(Arg::from_usage("-i, --input <FILE> 'Input crossword file location.'"))
         .arg(Arg::from_usage("[random] -r, --random 'Randomize word fill. Default is false.'"))
+        .arg(Arg::from_usage("[max-time] -m, --max-time <SECONDS> 'Maximum number of seconds to process. Default is 120s (2 minutes).'"))
         .arg(Arg::from_usage("[words] -w, --words <WORDS_FILE_NAME> 'File name from /words without extension to use for filling. Default is `en`.'"))
         .arg(Arg::from_usage("[format] -f, --format <FORMAT> 'Output format. Can be `grid` for simple grid or `across` for Across Puzzle V2 text. Default is `grid`.'"))
         .arg(Arg::from_usage("[title] -t, --title <TITLE> 'Puzzle title for across output. Defaults to title case file name.'"))
@@ -38,9 +39,13 @@ fn main() -> Result<(), String> {
     }
 
     let words = matches.value_of("words").unwrap_or("en");
-
+    
+    let max_time_seconds = matches.value_of("max-time")
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(120); // Default to 120 seconds (2 minutes)
+    
     let trie = Trie::load(words).expect("Failed to load trie");
-    let crossword = Filler::new(&trie, random).fill(&input);
+    let crossword = Filler::new(&trie, random, Some(max_time_seconds)).fill(&input);
 
     match crossword {
         Ok(crossword) => {
@@ -72,7 +77,7 @@ fn main() -> Result<(), String> {
                 }
             }
         }
-        Err(_) => return Err(String::from("Failed to fill crossword")),
+        Err(s) => return Err(String::from(format!("Failed to fill crossword: {}", s))),
     }
     Ok(())
 }

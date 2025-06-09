@@ -1,11 +1,13 @@
 [package]
 name = "xwords"
-version = "0.3.1"
-authors = ["Sam Szuflita <sam.szuflita@gmail.com>"]
+version = "0.4.0"
+authors = ["Sam Szuflita <sam.szuflita@gmail.com>", "Adrian Tosca <adrian.tosca@gmail.com>"]
 edition = "2018"
 license = "MIT"
 description = "Tooling to fill crossword puzzles"
-repository = "https://github.com/szunami/xwords-rs"
+repository = "https://github.com/aleris/xwords-rs"
+# Forked from:
+#repository = "https://github.com/szunami/xwords-rs"
 readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
