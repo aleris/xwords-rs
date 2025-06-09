@@ -20,10 +20,19 @@ impl AcrossFileFormat {
             copyright,
         }
     }
+
+    fn indent(s: &str, spaces: usize) -> String {
+        let indent = " ".repeat(spaces);
+        s.lines()
+            .map(|line| format!("{}{}", indent, line))
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
 }
 
 impl fmt::Display for AcrossFileFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent_spaces = 2;
         write!(
             f,
             "<ACROSS PUZZLE V2>
@@ -34,21 +43,26 @@ impl fmt::Display for AcrossFileFormat {
 <COPYRIGHT>
 {}
 <SIZE>
-{}x{}
+{}
 <GRID>
 {}
 <ACROSS>
 {}
 <DOWN>
 {}",
-            self.title,
-            self.author,
-            self.copyright,
-            self.crossword.width,
-            self.crossword.height,
-            self.crossword,
-            self.crossword.words(Direction::Across).join("\n"),
-            self.crossword.words(Direction::Down).join("\n"),
+            Self::indent(self.title.as_str(), indent_spaces),
+            Self::indent(self.author.as_str(), indent_spaces),
+            Self::indent(self.copyright.as_str(), indent_spaces),
+            Self::indent(&format!("{}x{}", self.crossword.width, self.crossword.height), indent_spaces),
+            Self::indent(&format!("{}", self.crossword), indent_spaces),
+            Self::indent(
+                &self.crossword.words(Direction::Across).join("\n"),
+                indent_spaces
+            ),
+            Self::indent(
+                &self.crossword.words(Direction::Down).join("\n"),
+                indent_spaces
+            ),
         )?;
         Ok(())
     }
@@ -77,25 +91,25 @@ RYAL
             format!("{}", a),
             "<ACROSS PUZZLE V2>
 <TITLE>
-title
+  title
 <AUTHOR>
-author
+  author
 <COPYRIGHT>
-copyright
+  copyright
 <SIZE>
-4x3
+  4x3
 <GRID>
-SIAM
-N.EM
-RYAL
+  SIAM
+  N.EM
+  RYAL
 <ACROSS>
-SIAM
-EM
-RYAL
+  SIAM
+  EM
+  RYAL
 <DOWN>
-SNR
-AEA
-MML"
+  SNR
+  AEA
+  MML"
         );
     }
 }
